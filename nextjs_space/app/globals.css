@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 358 79% 56%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 6% 10%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 220 6% 15%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 199 90% 71%;
+    --accent-foreground: 0 0% 4%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 358 79% 56%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  }
+}
+
+/* Leaflet overrides for dark theme */
+.leaflet-container {
+  background: #000 !important;
+  font-family: 'Inter', sans-serif !important;
+}
+.leaflet-control-zoom a {
+  background: #111 !important;
+  color: #f4f5f7 !important;
+  border-color: #222 !important;
+}
+.leaflet-control-zoom a:hover {
+  background: #222 !important;
+}
+.leaflet-control-attribution {
+  background: rgba(0,0,0,0.6) !important;
+  color: #666 !important;
+  font-size: 10px !important;
+}
+.leaflet-control-attribution a {
+  color: #888 !important;
+}
+.leaflet-tooltip {
+  background: #111 !important;
+  color: #f4f5f7 !important;
+  border: 1px solid #333 !important;
+  border-radius: 6px !important;
+  font-size: 13px !important;
+  padding: 4px 10px !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+}
+.leaflet-tooltip::before {
+  border-top-color: #333 !important;
+}
+
+/* Pulse animation for markers */
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+.marker-pulse {
+  position: relative;
+  width: 14px;
+  height: 14px;
+}
+.marker-dot {
+  width: 14px;
+  height: 14px;
+  background: #e63946;
+  border-radius: 50%;
+  border: 2px solid rgba(230,57,70,0.4);
+  box-shadow: 0 0 8px rgba(230,57,70,0.5);
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.marker-ring {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #e63946;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
