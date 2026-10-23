@@ -23,7 +23,7 @@ const POIS: POI[] = [
   { name: 'Cadaqués', lat: 42.2886, lng: 3.2764, comarca: 'Alt Empordà', description: 'Poble blanc del Cap de Creus que va inspirar Salvador Dalí. Carrers empedrats, cales cristal·lines i una llum única.', wiki: 'Cadaqués' },
   { name: 'Figueres', lat: 42.2666, lng: 2.9617, comarca: 'Alt Empordà', description: 'Ciutat natal de Salvador Dalí amb el famós Teatre-Museu Dalí, l\'obra surrealista més gran del món.', wiki: 'Figueres' },
   { name: 'Montserrat', lat: 41.5935, lng: 1.8378, comarca: 'Bages', description: 'Muntanya sagrada de Catalunya amb el monestir benedictí i la Mare de Déu de Montserrat, la Moreneta. Formacions rocoses úniques.', wiki: 'Montserrat_(mountain)' },
-  { name: 'Vic', lat: 41.8893, lng: 2.2546, comarca: 'Osona', description: 'Capital de la plana de Vic amb un centre històric notable. La plaça Major porticada és una de les més belles de Catalunya.', wiki: 'Vic' },
+  { name: 'Vic', lat: 41.8893, lng: 2.2546, comarca: 'Osona', description: 'Capital de la plana de Vic amb un centre històric notable. La plaça Major porticada és una de les més belles de Catalunya.', wiki: 'Vic,_Catalonia' },
   { name: 'Reus', lat: 41.1559, lng: 1.1072, comarca: 'Baix Camp', description: 'Ciutat natal d\'Antoni Gaudí amb un centre modernista extraordinari. Capital del vermut i de la cultura del Camp de Tarragona.', wiki: 'Reus' },
   { name: 'Tortosa', lat: 40.8126, lng: 0.5215, comarca: 'Baix Ebre', description: 'Ciutat monumental a la riba de l\'Ebre amb catedral gòtica, barri jueu i un notable conjunt modernista.', wiki: 'Tortosa' },
   { name: 'Besalú', lat: 42.1989, lng: 2.6987, comarca: 'Garrotxa', description: 'Vila medieval presidida pel seu pont romànic fortificat del segle XII. Un dels conjunts medievals més ben conservats de Catalunya.', wiki: 'Besalú' },
@@ -51,18 +51,34 @@ const POIS: POI[] = [
 const COMARCA_GEOJSON_URL = 'https://raw.githubusercontent.com/rveciana/catalonia-geoJSON/master/comarques.geojson'
 const OUTLINE_GEOJSON_URL = 'https://raw.githubusercontent.com/rveciana/catalonia-geoJSON/master/catalunya.geojson'
 
-async function fetchWikiImage(title: string): Promise<string | null> {
+const wikiCache = new Map<string, string | null>()
+
+async function wikiThumb(host: string, params: string): Promise<string | null> {
   try {
-    const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=600&origin=*`
+    const url = `https://${host}.wikipedia.org/w/api.php?action=query&format=json&prop=pageimages&piprop=thumbnail&pithumbsize=600&redirects=1&origin=*&${params}`
     const res = await fetch(url)
-    const data = await res?.json?.()
-    const pages = data?.query?.pages
-    if (!pages) return null
-    const page = Object.values(pages)?.[0] as any
-    return page?.thumbnail?.source ?? null
+    const data = await res.json()
+    const pages = Object.values(data?.query?.pages ?? {}) as any[]
+    pages.sort((a, b) => (a?.index ?? 0) - (b?.index ?? 0))
+    return pages.find((p) => p?.thumbnail?.source)?.thumbnail?.source ?? null
   } catch {
     return null
   }
+}
+
+// Exact title first, then a search on en and ca Wikipedia for ambiguous or missing titles
+async function fetchWikiImage(poi: POI): Promise<string | null> {
+  const cached = wikiCache.get(poi.name)
+  if (cached !== undefined) return cached
+  let title = poi.wiki
+  try { title = decodeURIComponent(title) } catch {}
+  const q = encodeURIComponent
+  const img =
+    (await wikiThumb('en', `titles=${q(title)}`)) ??
+    (await wikiThumb('en', `generator=search&gsrlimit=5&gsrsearch=${q(`${poi.name} ${poi.comarca} Catalonia`)}`)) ??
+    (await wikiThumb('ca', `generator=search&gsrlimit=5&gsrsearch=${q(`${poi.name} ${poi.comarca}`)}`))
+  wikiCache.set(poi.name, img)
+  return img
 }
 
 export default function CataloniaMap() {
@@ -85,7 +101,7 @@ export default function CataloniaMap() {
     setPanelOpen(true)
     setImageUrl(null)
     setImageLoading(true)
-    const img = await fetchWikiImage(poi?.wiki ?? '')
+    const img = await fetchWikiImage(poi)
     setImageUrl(img)
     setImageLoading(false)
   }, [])
@@ -380,9 +396,7 @@ export default function CataloniaMap() {
                   src={imageUrl}
                   alt={selectedPOI?.name ?? ''}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                    (e.target as HTMLImageElement).style.display = 'none'
-                  }}
+                  onError={() => setImageUrl(null)}
                 />
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: '#333' }}>
