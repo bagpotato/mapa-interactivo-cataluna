@@ -124,9 +124,8 @@ export default function CataloniaMap() {
 
     L.control.zoom({ position: 'bottomright' }).addTo(map)
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=cb1_4qx2_1_1d998e9e3d3a01b08365ae7b', {
+    L.tileLayer('/api/tiles/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-      subdomains: 'abcd',
       maxZoom: 19,
     }).addTo(map)
 
